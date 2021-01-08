@@ -79,10 +79,38 @@ struct ContentView: View {
     
     @State var alertIsVisible: Bool = false
     @State var locationData: String = ""
-    
-    
     @State var locations: [String] = []
 
+    
+
+    func getLocations(loc: CLLocationCoordinate2D ){
+
+        locations.removeAll()
+        
+        let searchRequest = MKLocalSearch.Request()
+        searchRequest.region = MKCoordinateRegion(
+            center: loc,
+            span: MKCoordinateSpan(latitudeDelta: 50, longitudeDelta: 50)
+        )
+        
+        searchRequest.naturalLanguageQuery = "food"
+        
+        let search = MKLocalSearch(request: searchRequest)
+        search.start{ (response, error) in
+            guard let response = response else{
+                print(error?.localizedDescription)
+                return
+            }
+            for item in response.mapItems{
+                if let name = item.name{
+                    locations.append(name)
+                }
+            }
+            dump(locations)
+        }
+
+    }
+    
     
     var body: some View {
         
@@ -96,7 +124,7 @@ struct ContentView: View {
             
             Button(action: {
                 locations.removeAll()
-                locations.append(contentsOf:  getLocations(loc: CLLocationCoordinate2D(latitude: latitude, longitude: longitude)))
+                getLocations(loc: CLLocationCoordinate2D(latitude: latitude, longitude: longitude))
                 print(locations)
                 buttonPress(location: locationData)
                 self.alertIsVisible = true
@@ -105,14 +133,13 @@ struct ContentView: View {
             }
             
             
-            
+
             List{
                 ForEach(locations, id: \.self) { location in
                                 Text(location)
                             }
             }
 
-            
             
             Text("Latitude: \(self.latitude)")
             Text("Longitude: \(self.longitude)")
@@ -127,41 +154,7 @@ struct ContentView: View {
 }
 
 
-func getLocations(loc: CLLocationCoordinate2D ) -> [String] {
-    
-    var locationNames: [String] = []
-    
-    let searchRequest = MKLocalSearch.Request()
-    searchRequest.region = MKCoordinateRegion(
-        center: loc,
-        span: MKCoordinateSpan(latitudeDelta: 50, longitudeDelta: 50)
-    )
-    
-    searchRequest.naturalLanguageQuery = "food"
-    
-    let search = MKLocalSearch(request: searchRequest)
-    search.start{ (response, error) in
-        guard let response = response else{
-            print(error?.localizedDescription)
-            return
-        }
-        /*
-        for item in response.mapItems{
-            if let name = item.name,
-               let location = item.placemark.location{
-                print("\(name): \(location.coordinate.latitude),\(location.coordinate.longitude)")
-            }
-        }*/
-        for item in response.mapItems{
-            if let name = item.name{
-                locationNames.append(name)
-            }
-        }
-    }
-    print(locationNames)
-    
-    return locationNames
-}
+
 
 func buttonPress(location: String){
     print ("Button Pressed")
